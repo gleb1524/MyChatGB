@@ -31,19 +31,31 @@ public class ClientHandler {
             new Thread(() -> {
                 try {
                     //цикл аутентификации
-                    while (true) {
+                    while (!authenticated) {
 
                         String str = in.readUTF();
                         if (str.equals(ServiceMessages.END)) {
                             sendMessage("Server down");
                             break;
                         }
+                        if(str.startsWith(ServiceMessages.RENAME)){
+                            String[] token = str.split(" ", 4);
+                            if(token.length<4){
+                                continue;
+                            }
+                            String newNick = server.getAuthService().rename(token[1], token[2], token[3]);
+                            if(newNick.startsWith(ServiceMessages.RENAME_OK)){
+                            sendMessage(newNick);
+                            }else if(newNick.startsWith(ServiceMessages.RENAME_NO)){
+                                sendMessage(ServiceMessages.RENAME_NO);
+                            }
+                        }
                         if(str.startsWith(ServiceMessages.AUTH)){
                             String[] token = str.split(" ",3);
                             if(token.length<3){
                                 continue;
                             }
-                            String newNick = server.getAuthService().getNickname(token[1], token[2]);
+                            String newNick = server.getAuthService().getNicknameJdbc(token[1], token[2]);
                             if (newNick != null){
                                 login = token[1];
                                 if(!server.checkAuth(login)){
@@ -65,7 +77,7 @@ public class ClientHandler {
                                 continue;
                             }
                             if(server.getAuthService().
-                                    checkRegistration(token[1], token[2], token[3])){
+                                    checkRegistrationJdbc(token[1], token[2], token[3])){
                                 sendMessage(ServiceMessages.REG_OK);
                             }else{
                                 sendMessage(ServiceMessages.REG_NO);
