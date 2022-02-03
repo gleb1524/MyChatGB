@@ -20,7 +20,7 @@ import java.util.ResourceBundle;
 
 public class Client implements Initializable {
     private static Socket socket;
-    private static final int PORT = 8189;
+    private static final int PORT = 8180;
     private static final String HOST = "localhost";
     private static DataInputStream in;
     private static DataOutputStream out;
@@ -82,6 +82,7 @@ public class Client implements Initializable {
                             e.printStackTrace();
                         }
                     }else {
+                        authenticated=true;
                         stage.close();
                     }
                 }
@@ -133,6 +134,14 @@ public class Client implements Initializable {
                             }
                             if(str.startsWith(ServiceMessages.REG)){
                                 regController.registrationResult(str);
+                                break;
+                            }
+                            if(str.startsWith(ServiceMessages.RENAME)){
+                                if(str.startsWith(ServiceMessages.RENAME_OK)){
+                                regController.registrationResult(str);
+                                }else if(str.startsWith(ServiceMessages.RENAME_NO)){
+                                    regController.registrationResult(str);
+                                }
                                 break;
                             }
                             if(str.startsWith(ServiceMessages.AUTH_OK)){
@@ -260,6 +269,16 @@ public class Client implements Initializable {
     }
 
     public void checkRegMsg(String result){
+        if(socket == null || socket.isClosed()){
+            connect();
+        }
+        try {
+            out.writeUTF(result);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void renameMsg(String result){
         if(socket == null || socket.isClosed()){
             connect();
         }

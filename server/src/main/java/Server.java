@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class Server {
     private  ServerSocket server;
     private  Socket socket;
-    private  final int PORT = 8189;
+    private  final int PORT = 8180;
     private List<ClientHandler> clients;
     private AuthService authService;
 
@@ -19,7 +19,7 @@ public class Server {
     }
 
     public Server() {
-        authService = new SimpleAuthService();
+        authService = new DateBaseAuthService();
         authService.start();
         clients = new CopyOnWriteArrayList<>();
         try {
@@ -30,18 +30,13 @@ public class Server {
                 socket = server.accept();
                 System.out.println("Client connected:"+socket.getRemoteSocketAddress());
                 new ClientHandler(this, socket);
-
             }
-
-
-
-
-
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
             System.out.println("Server down");
             try{
+                authService.stop();
                 server.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -50,9 +45,7 @@ public class Server {
         }
     }
 
-
     public void subscribe(ClientHandler clientHandler){
-
         clients.add(clientHandler);
         clientList();
     }
