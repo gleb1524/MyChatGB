@@ -16,7 +16,12 @@ import javafx.stage.WindowEvent;
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
+
 
 public class Client implements Initializable {
     private static Socket socket;
@@ -24,12 +29,15 @@ public class Client implements Initializable {
     private static final String HOST = "localhost";
     private static DataInputStream in;
     private static DataOutputStream out;
+    private static BufferedWriter writeHistory;
     public HBox sendMessageBar;
     public ListView clientList;
     private boolean authenticated;
     private String nickname;
     private Stage stage;
     private int authTime = 0;
+    private String history;
+
     @FXML
     public javafx.scene.control.TextArea textArea;
     @FXML
@@ -46,7 +54,9 @@ public class Client implements Initializable {
     private Stage regStage;
     @FXML
     private RegController regController;
-
+    public boolean isAuthenticated() {
+        return authenticated;
+    }
 
     @FXML
     public void pressToClose(ActionEvent actionEvent) {
@@ -78,6 +88,7 @@ public class Client implements Initializable {
                     if(socket != null && !socket.isClosed()) {
                         try {
                             out.writeUTF(ServiceMessages.END);
+                            setAuthenticated(false);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -88,7 +99,7 @@ public class Client implements Initializable {
                 }
             });
         });
-        setAuthenticated(false);
+
     }
 
     @FXML
@@ -111,16 +122,65 @@ public class Client implements Initializable {
                     textFieldLogin.getText().trim(), textFieldPassword.getText().trim());
            out.writeUTF(str);
            textFieldPassword.clear();
+//показать пользователи последние 100 сообщений истории после входа
+           Platform.runLater(() -> {
+               try {
+                   textArea.appendText(historyMessage());
+               } catch (IOException e) {
+                   e.printStackTrace();
+               }
+           });
+
         } catch (IOException e) {
             System.out.println(e+"ошибка в отправке пары пароль/логин");
         }
+    }
+
+    private String historyMessage() throws IOException {
+        List<String> historyList = Files.readAllLines(Paths.get(history));
+        List<String> historyListFormat;
+        StringBuilder stringBuilder = new StringBuilder("******HISTORY OF RECENT MESSAGE******\n");
+        if(historyList.size()>=100){
+            historyListFormat = historyList.subList(historyList.size()-100, historyList.size());
+            for (String s : historyListFormat) {
+                stringBuilder.append(s);
+                stringBuilder.append("\n");
+            }
+        }else {
+            for (String s : historyList) {
+                stringBuilder.append(s);
+                stringBuilder.append("\n");
+            }
+        }
+
+//        int count = 0;
+//        for (int i = historyList.size()-1; i >=0 ; i--) {
+//            count++;
+//            if(count>100){
+//                break;
+//            }
+//            historyListFormat.add(historyList.get(i));
+//        }
+//        for (int i = historyListFormat.size()-1; i>=0 ; i--) {
+//            stringBuilder.append(historyListFormat.get(i));
+//            stringBuilder.append("\n");
+//        }
+            stringBuilder.append("***********END HISTORY*********** \n");
+        return stringBuilder.toString();
     }
     public void connect(){
         try {
 
             socket = new Socket(HOST, PORT);
+            history = "client/src/main/java/history/history_"+textFieldLogin.getText()+".txt";
             out = new DataOutputStream(socket.getOutputStream());
             in = new DataInputStream(socket.getInputStream());
+//создание txt файла с историей сообщений
+            File historyFile = new File(history);
+            if(!historyFile.exists()){
+                historyFile.createNewFile();
+            }
+            writeHistory = new BufferedWriter(new FileWriter(historyFile, true));
 
 
             /* Thread inputStream =*/
@@ -136,18 +196,14 @@ public class Client implements Initializable {
                                 regController.registrationResult(str);
                                 break;
                             }
-                            if(str.startsWith(ServiceMessages.RENAME)){
-                                if(str.startsWith(ServiceMessages.RENAME_OK)){
-                                regController.registrationResult(str);
-                                }else if(str.startsWith(ServiceMessages.RENAME_NO)){
-                                    regController.registrationResult(str);
-                                }
-                                break;
-                            }
+
                             if(str.startsWith(ServiceMessages.AUTH_OK)){
                                 nickname = str.split(" ")[1];
                                 setAuthenticated(true);
                                 textArea.clear();
+                                //File file = new File("client/history.txt");
+
+
                                 break;
                             }
                         else {
@@ -159,6 +215,14 @@ public class Client implements Initializable {
                     while (authenticated) {
                         String str = in.readUTF();
                         if(str.startsWith("/")){
+                            if(str.startsWith(ServiceMessages.RENAME)){
+                                if(str.startsWith(ServiceMessages.RENAME_OK)){
+                                    regController.registrationResult(str);
+                                }else if(str.startsWith(ServiceMessages.RENAME_NO)){
+                                    regController.registrationResult(str);
+                                }
+                                //break;
+                            }
                             if(str.startsWith(ServiceMessages.CLIENT_LIST)){
                                 Platform.runLater(() -> {
                                     clientList.getItems().clear();
@@ -170,6 +234,8 @@ public class Client implements Initializable {
                            }
                         }else{
                             textArea.appendText(str+"\n");
+                            writeHistory.append(str);
+
                         }
                     }
                 } catch (IOException e) {
@@ -177,6 +243,7 @@ public class Client implements Initializable {
                 } finally {
                     try {
                         out.writeUTF(ServiceMessages.END);
+                        writeHistory.close();
                         socket.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -247,6 +314,9 @@ public class Client implements Initializable {
        textField.setText(ServiceMessages.PRIVATE_MSG + " " + receiver + " ");
     }
     public void registration(){
+        if(socket == null || socket.isClosed()){
+            connect();
+        }
         try{
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/reg.fxml"));
             Parent root = fxmlLoader.load();
@@ -287,5 +357,11 @@ public class Client implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void rename(ActionEvent actionEvent) {
+        registration();
+        regStage.setTitle("Rename");
+
     }
 }

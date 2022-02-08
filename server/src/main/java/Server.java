@@ -51,7 +51,6 @@ public class Server {
     }
 
     public void unsubscribe(ClientHandler clientHandler){
-
         clients.remove(clientHandler);
         clientList();
     }

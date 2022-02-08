@@ -1,10 +1,7 @@
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Button;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 
 public class RegController {
@@ -21,10 +18,28 @@ public class RegController {
     public HBox buttonsPanels;
     public Button rename;
     public Button enter;
+    public Label labelLogin;
+    public Label labelPassword;
+    public Label labelNickname;
     private Client client;
 
     public void setClient(Client client) {
         this.client = client;
+        if(client.isAuthenticated()){
+            registration.setVisible(false);
+            registration.setManaged(false);
+            rename.setVisible(true);
+            rename.setManaged(true);
+            textFieldLogin.setVisible(false);
+            textFieldLogin.setManaged(false);
+            textFieldPassword.setVisible(false);
+            textFieldPassword.setManaged(false);
+            labelLogin.setVisible(false);
+            labelPassword.setVisible(false);
+            labelLogin.setManaged(false);
+            labelPassword.setManaged(false);
+            labelNickname.setText("Pleas enter a new nickname.");
+        }
     }
 
     @FXML
@@ -52,27 +67,17 @@ public class RegController {
     }
 
     public void pressToRename(ActionEvent actionEvent) {
-        registration.setVisible(false);
-        registration.setManaged(false);
-        rename.setVisible(false);
-        rename.setManaged(false);
-        enter.setVisible(true);
-        enter.setManaged(true);
+//        String login = textFieldLogin.getText().trim();
+//        String password = textFieldPassword.getText().trim();
+        String nickname = textFieldNick.getText().trim();
+        String massage = String.format("%s %s", ServiceMessages.RENAME, nickname);
+        client.renameMsg(massage);
     }
 
     public void saveRename(ActionEvent actionEvent) {
-        registration.setVisible(true);
-        registration.setManaged(true);
-        rename.setVisible(true);
-        rename.setManaged(true);
-        enter.setManaged(false);
-        enter.setVisible(false);
 
-        String login = textFieldLogin.getText().trim();
-        String password = textFieldPassword.getText().trim();
-        String nickname = textFieldNick.getText().trim();
-        String massage = String.format("%s %s %s %s", ServiceMessages.RENAME, login, password, nickname);
-        client.renameMsg(massage);
+
+
 
     }
 }
