@@ -1,7 +1,18 @@
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleAuthService implements AuthService{
+    @Override
+    public String rename(String nickname, String login) throws SQLException {
+        return null;
+    }
+
+    @Override
+    public void creatRegistration(String login, String password, String nickname) throws SQLException {
+
+    }
+
     @Override
     public void start() {
         System.out.println("Auth service start");
@@ -46,7 +57,7 @@ public class SimpleAuthService implements AuthService{
     }
 
     @Override
-    public boolean checkRegistration(String login, String password, String nickname) {
+    public boolean hasRegistration(String login, String password, String nickname) {
         for (ClientsDate date : clientsDate) {
             if(date.login.equals(login)||date.nickname.equals(nickname)){
                 return false;
@@ -55,4 +66,6 @@ public class SimpleAuthService implements AuthService{
         clientsDate.add(new ClientsDate(login, password, nickname));
         return true;
     }
+
+
 }
