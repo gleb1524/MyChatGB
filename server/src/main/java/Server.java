@@ -1,11 +1,9 @@
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.*;
 
 public class Server {
     private  ServerSocket server;
@@ -13,6 +11,9 @@ public class Server {
     private  final int PORT = 8180;
     private List<ClientHandler> clients;
     private AuthService authService;
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
+
+
 
     public AuthService getAuthService() {
         return authService;
@@ -24,17 +25,32 @@ public class Server {
         clients = new CopyOnWriteArrayList<>();
         try {
             server = new ServerSocket(PORT);
+            LogManager logManager = LogManager.getLogManager();
+            logManager.readConfiguration(new FileInputStream("logging.properties"));
+//            Handler handler = new FileHandler();
+//            handler.setFormatter(new Formatter() {
+//                @Override
+//                public String format(LogRecord logRecord) {
+//                    return String.format(">>>>> %s, Level: %s, ThreadID: %d, method: %s \n",
+//                            logRecord.getMessage(), logRecord.getLevel(),
+//                            logRecord.getThreadID(), logRecord.getSourceMethodName());
+//                }
+//            });
+//            //logger.setUseParentHandlers(false);
+            logger.info("Server started!");
             System.out.println("Server started!");
 
             while (true){
                 socket = server.accept();
-                System.out.println("Client connected:"+socket.getRemoteSocketAddress());
+                logger.fine("Client connected:"+socket.getRemoteSocketAddress());
+                //System.out.println("Client connected:"+socket.getRemoteSocketAddress());
                 new ClientHandler(this, socket);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            System.out.println("Server down");
+            logger.severe("Server down");
+            //System.out.println("Server down");
             try{
                 authService.stop();
                 server.close();

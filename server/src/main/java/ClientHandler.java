@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class ClientHandler {
     private  Socket socket;
@@ -10,6 +11,8 @@ public class ClientHandler {
     private  DataOutputStream out;
     private boolean authenticated;
     private String login;
+    private static final Logger logger = Logger.getLogger(DateBaseAuthService.class.getName());
+
 
     public String getLogin() {
         return login;
@@ -53,7 +56,8 @@ public class ClientHandler {
                                 nickname = newNick;
                                 sendMessage(ServiceMessages.AUTH_OK + " " + nickname);
                                 server.subscribe(this);
-                                System.out.println("Client " + nickname +" authenticated");
+                                logger.info("Client " + nickname +" authenticated");
+                                //System.out.println("Client " + nickname +" authenticated");
                                 break;
                                 }else{
                                     sendMessage("Login online!");
@@ -78,7 +82,8 @@ public class ClientHandler {
                 //цикл работы
                 while (authenticated) {
                     String str = in.readUTF();
-                        System.out.println("Client: " + str);
+                        logger.finest("Client: " + str);
+                        //System.out.println("Client: " + str);
                         if(str.startsWith("/")){
                             if (str.equals(ServiceMessages.END)) {
                                 sendMessage(ServiceMessages.END);
@@ -112,22 +117,27 @@ public class ClientHandler {
                         }
                 }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.warning(e.toString());
+                       // e.printStackTrace();
                     } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.warning(e.toString());
+                    //e.printStackTrace();
                 } finally {
-                        System.out.println("Client disconnected");
+                        logger.info("Client disconnected");
+                        //System.out.println("Client disconnected");
                         try {
                             socket.close();
                             server.unsubscribe(this);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.warning(e.toString());
+                            //e.printStackTrace();
                         }
                     }
             }).start();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning(e.toString());
+            //e.printStackTrace();
         }
     }
 
@@ -135,7 +145,8 @@ public class ClientHandler {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning(e.toString());
+            //e.printStackTrace();
         }
     }
 

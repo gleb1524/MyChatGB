@@ -1,14 +1,16 @@
 import java.sql.*;
+import java.util.logging.Logger;
 
 public class DateBaseAuthService implements AuthService{
     private  Connection connection;
     private  Statement stmt;
+    private static final Logger logger = Logger.getLogger(DateBaseAuthService.class.getName());
 
     public DateBaseAuthService() {
         try {
             connectDb();
-            System.out.println("connect...");
-
+//            System.out.println("connect...");
+        logger.info("connect");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -104,12 +106,14 @@ public class DateBaseAuthService implements AuthService{
         try {
             stmt.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.warning(e.toString());
+           // e.printStackTrace();
         }
         try {
             connection.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.warning(e.toString());
+           // e.printStackTrace();
         }
     }
 
