@@ -23,6 +23,7 @@
             <Menu text="File">
                 <MenuItem text="Open"/>
                 <MenuItem text="Edit"/>
+                <MenuItem text="Rename" onAction="#rename"/>
                 <MenuItem text="Close" onAction="#pressToClose"/>
             </Menu>
         </MenuBar>

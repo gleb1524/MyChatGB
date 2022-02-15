@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class ClientHandler {
     private  Socket socket;
@@ -9,6 +11,8 @@ public class ClientHandler {
     private  DataOutputStream out;
     private boolean authenticated;
     private String login;
+    private static final Logger logger = Logger.getLogger(DateBaseAuthService.class.getName());
+
 
     public String getLogin() {
         return login;
@@ -31,15 +35,16 @@ public class ClientHandler {
             new Thread(() -> {
                 try {
                     //цикл аутентификации
-                    while (true) {
+                    while (!authenticated) {
 
                         String str = in.readUTF();
                         if (str.equals(ServiceMessages.END)) {
                             sendMessage("Server down");
                             break;
                         }
+
                         if(str.startsWith(ServiceMessages.AUTH)){
-                            String[] token = str.split(" ",3);
+                            String[] token = str.split(" ");
                             if(token.length<3){
                                 continue;
                             }
@@ -51,7 +56,8 @@ public class ClientHandler {
                                 nickname = newNick;
                                 sendMessage(ServiceMessages.AUTH_OK + " " + nickname);
                                 server.subscribe(this);
-                                System.out.println("Client " + nickname +" authenticated");
+                                logger.info("Client " + nickname +" authenticated");
+                                //System.out.println("Client " + nickname +" authenticated");
                                 break;
                                 }else{
                                     sendMessage("Login online!");
@@ -60,26 +66,44 @@ public class ClientHandler {
                                 sendMessage("Неверный логин/пароль");
                             }
                         }if(str.startsWith(ServiceMessages.REG)){
-                            String[] token = str.split(" ", 4);
+                            String[] token = str.split(" ");
                             if(token.length<4){
                                 continue;
                             }
                             if(server.getAuthService().
-                                    checkRegistration(token[1], token[2], token[3])){
-                                sendMessage(ServiceMessages.REG_OK);
-                            }else{
+                                    hasRegistration(token[1], token[2], token[3])){
                                 sendMessage(ServiceMessages.REG_NO);
+                            }else{
+                                server.getAuthService().creatRegistration(token[1], token[2], token[3]);
+                                sendMessage(ServiceMessages.REG_OK);
                             }
                         }
                     }
                 //цикл работы
                 while (authenticated) {
                     String str = in.readUTF();
-                        System.out.println("Client: " + str);
+                        logger.finest("Client: " + str);
+                        //System.out.println("Client: " + str);
                         if(str.startsWith("/")){
                             if (str.equals(ServiceMessages.END)) {
                                 sendMessage(ServiceMessages.END);
                                 break;
+                            }
+                            if(str.startsWith(ServiceMessages.RENAME)){
+                                String[] token = str.split(" ");
+                                if(token.length<2){
+                                    continue;
+                                }
+                                server.unsubscribe(this);
+                                String newNick = server.getAuthService().rename(token[1], getLogin());
+                                if(newNick.startsWith(ServiceMessages.RENAME_OK)){
+                                    sendMessage(newNick);
+                                    nickname = token[1];
+                                    server.subscribe(this);
+                                }else if(newNick.startsWith(ServiceMessages.RENAME_NO)){
+                                    server.subscribe(this);
+                                    sendMessage(ServiceMessages.RENAME_NO);
+                                }
                             }
                             if(str.startsWith(ServiceMessages.PRIVATE_MSG)){
                                 String[] token = str.split(" ",3);
@@ -93,20 +117,27 @@ public class ClientHandler {
                         }
                 }
                     } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        System.out.println("Client disconnected");
+                        logger.warning(e.toString());
+                       // e.printStackTrace();
+                    } catch (SQLException e) {
+                    logger.warning(e.toString());
+                    //e.printStackTrace();
+                } finally {
+                        logger.info("Client disconnected");
+                        //System.out.println("Client disconnected");
                         try {
                             socket.close();
                             server.unsubscribe(this);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.warning(e.toString());
+                            //e.printStackTrace();
                         }
                     }
             }).start();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning(e.toString());
+            //e.printStackTrace();
         }
     }
 
@@ -114,7 +145,8 @@ public class ClientHandler {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning(e.toString());
+            //e.printStackTrace();
         }
     }
 

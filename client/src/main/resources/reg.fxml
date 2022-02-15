@@ -19,13 +19,17 @@
         <Insets bottom="2.0" left="0.5" right="0.5" top="2.0"/>
     </padding>
 
-            <Label text="Login"/>
+            <Label fx:id="labelLogin" text="Login"/>
             <TextField fx:id="textFieldLogin" promptText="Login" HBox.hgrow="ALWAYS"/>
-            <Label text="Password"/>
+            <Label fx:id="labelPassword" text="Password"/>
             <PasswordField fx:id="textFieldPassword" promptText="password" HBox.hgrow="ALWAYS"/>
-            <Label text="Nickname"/>
+            <Label fx:id="labelNickname" text="Nickname"/>
             <TextField fx:id="textFieldNick" promptText="Nickname" HBox.hgrow="ALWAYS"/>
             <TextArea fx:id="textArea" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" editable="false"/>
-            <Button fx:id="registration" text="Registration" HBox.hgrow="ALWAYS" onAction="#pressToReg"/>
+    <HBox fx:id="buttonsPanels">
+        <Button fx:id="registration" text="Registration" HBox.hgrow="ALWAYS" onAction="#pressToReg"/>
+        <Button fx:id="rename" text="Rename" visible="false" managed="false" onAction="#pressToRename"/>
+    </HBox>
+
 
 </VBox>
